@@ -68,6 +68,21 @@ private:
     Bluetooth *m_bt;
 };
 
+// Turn BlueZ error strings into something a user can act on.
+QString friendlyError(const QString &method, const QString &err) {
+    if (err.contains("br-connection-create-socket") || err.contains("page-timeout") || err.contains("Host is down"))
+        return "The device did not answer. Wake it (press a key) and try again.";
+    if (err.contains("AuthenticationFailed") || err.contains("Authentication Failed"))
+        return "Pairing failed: the code was not entered in time. Try again.";
+    if (err.contains("AuthenticationCanceled") || err.contains("Canceled"))
+        return "Pairing was cancelled.";
+    if (err.contains("AlreadyExists") || err.contains("Already Exists"))
+        return "Already paired.";
+    if (err.contains("InProgress") || err.contains("In Progress"))
+        return "Busy, please wait a moment.";
+    return method + " failed: " + err;
+}
+
 class Bluetooth {
 public:
     QQmlPropertyMap *map = nullptr;
@@ -133,7 +148,7 @@ public:
             w->deleteLater();
             if (r.isError()) {
                 set("passkey", QString());
-                set("status", method + " failed: " + r.error().message());
+                set("status", friendlyError(method, r.error().message()));
             } else if (onOk) {
                 onOk();
             }
