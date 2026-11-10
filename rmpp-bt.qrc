@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="/rmppbt">
+    <file>qml/BtSidebarItem.qml</file>
+    <file>qml/BtPage.qml</file>
+    <file>icons/bluetooth.svg</file>
+  </qresource>
+</RCC>
