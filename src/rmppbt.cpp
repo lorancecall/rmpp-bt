@@ -3,7 +3,9 @@
 // Built without moc: QML talks to C++ through a QQmlPropertyMap ("bt").
 #include <functional>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QDir>
 #include <QtCore/QFile>
+#include <QtCore/QSet>
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
@@ -185,12 +187,40 @@ public:
             deviceCall(arg, "Connect", 30000, [this] { set("status", QString()); });
         } else if (verb == "disconnect") {
             deviceCall(arg, "Disconnect", 15000);
+        } else if (verb == "folio") {
+            // folio:<address>:<0|1>  per-keyboard "Type Folio mode", read by rmpp-korean
+            const QString addr = arg.section(':', 0, 5).toUpper();
+            setFolio(addr, arg.section(':', 6, 6) == "1");
+            refresh();
         } else if (verb == "remove") {
             QDBusMessage m = QDBusMessage::createMethodCall(BLUEZ, ADAPTER, "org.bluez.Adapter1", "RemoveDevice");
             m << QVariant::fromValue(QDBusObjectPath(arg));
             bus().call(m);
             refresh();
         }
+    }
+
+    static QString folioFile() { return QStringLiteral("/home/root/.config/rmpp-bt/keyboards.conf"); }
+
+    QSet<QString> folioSet() {
+        QSet<QString> out;
+        QFile f(folioFile());
+        if (!f.open(QIODevice::ReadOnly)) return out;
+        const QList<QByteArray> lines = f.readAll().split('\n');
+        for (const QByteArray &line : lines) {
+            const QList<QByteArray> kv = line.trimmed().split('=');
+            if (kv.size() == 2 && kv[1] == "folio") out.insert(QString::fromLatin1(kv[0]).toUpper());
+        }
+        return out;
+    }
+
+    void setFolio(const QString &addr, bool on) {
+        QSet<QString> set = folioSet();
+        if (on) set.insert(addr); else set.remove(addr);
+        QDir().mkpath(QStringLiteral("/home/root/.config/rmpp-bt"));
+        QFile f(folioFile());
+        if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) return;
+        for (const QString &a : std::as_const(set)) f.write((a + "=folio\n").toLatin1());
     }
 
     QString nameOf(const QString &path) {
@@ -211,6 +241,7 @@ public:
         const ManagedObjects objs = qdbus_cast<ManagedObjects>(r.arguments().first());
         bool haveAdapter = false;
         QJsonArray devs;
+        const QSet<QString> folio = folioSet();
         for (auto it = objs.cbegin(); it != objs.cend(); ++it) {
             const QString path = it.key().path();
             if (it.value().contains("org.bluez.Adapter1") && path == ADAPTER) {
@@ -228,6 +259,8 @@ public:
             o["paired"] = d.value("Paired").toBool();
             o["connected"] = d.value("Connected").toBool();
             o["icon"] = d.value("Icon").toString();
+            o["keyboard"] = d.value("Icon").toString().startsWith("input-keyboard");
+            o["folio"] = folio.contains(d.value("Address").toString().toUpper());
             devs.append(o);
         }
         set("available", haveAdapter);

@@ -88,22 +88,45 @@ Rectangle {
 
             Repeater {
                 model: bt.powered ? page.paired : []
-                delegate: ArkControls.Panel {
+                delegate: ColumnLayout {
                     required property var modelData
-                    label: modelData.name || modelData.address
-                    description: modelData.connected ? "Connected" : "Not connected"
+                    spacing: ArkControls.Values.spacing.small
                     Layout.fillWidth: true
-                    action: RowLayout {
-                        spacing: ArkControls.Values.spacing.medium
-                        ArkControls.Button {
-                            text: modelData.connected ? "Disconnect" : "Connect"
-                            type: ArkTokens.Button.secondary
-                            onClicked: page.send((modelData.connected ? "disconnect:" : "connect:") + modelData.path)
+
+                    ArkControls.Panel {
+                        label: modelData.name || modelData.address
+                        description: modelData.connected ? "Connected" : "Not connected"
+                        Layout.fillWidth: true
+                        action: RowLayout {
+                            spacing: ArkControls.Values.spacing.medium
+                            ArkControls.Button {
+                                text: modelData.connected ? "Disconnect" : "Connect"
+                                type: ArkTokens.Button.secondary
+                                onClicked: page.send((modelData.connected ? "disconnect:" : "connect:") + modelData.path)
+                            }
+                            ArkControls.Button {
+                                text: "Forget"
+                                type: ArkTokens.Button.secondary
+                                onClicked: page.send("remove:" + modelData.path)
+                            }
                         }
-                        ArkControls.Button {
-                            text: "Forget"
-                            type: ArkTokens.Button.secondary
-                            onClicked: page.send("remove:" + modelData.path)
+                    }
+
+                    // Keyboards only: behave like a Type Folio (typing layout, paragraph format button)
+                    // instead of folding just the on-screen keys and keeping the bottom format bar.
+                    ArkControls.Panel {
+                        visible: !!modelData.keyboard
+                        label: "Type Folio mode"
+                        description: modelData.folio ? "Works like a Type Folio" : "Hides the on-screen keys, keeps the format bar"
+                        Layout.fillWidth: true
+                        Layout.leftMargin: ArkControls.Values.margin.horizontal.large
+                        action: ArkControls.Toggle {
+                            checked: !!modelData.folio
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -20
+                                onClicked: page.send("folio:" + modelData.address + ":" + (modelData.folio ? "0" : "1"))
+                            }
                         }
                     }
                 }
