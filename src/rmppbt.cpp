@@ -90,6 +90,7 @@ public:
     QTimer *scanStop = nullptr;
     QObject *owner = nullptr;
     bool agentRegistered = false;
+    int watchers = 0;
 
     explicit Bluetooth(QObject *parent) : owner(parent) {
         qDBusRegisterMetaType<InterfaceMap>();
@@ -159,7 +160,8 @@ public:
     void command(const QString &c) {
         const QString verb = c.section(':', 0, 0), arg = c.section(':', 1);
         if (verb == "active") {
-            if (arg == "1") { registerAgent(); refresh(); poll->start(1500); }
+            watchers = qMax(0, watchers + (arg == "1" ? 1 : -1));
+            if (watchers > 0) { registerAgent(); refresh(); if (!poll->isActive()) poll->start(1500); }
             else { poll->stop(); if (map->value("discovering").toBool()) adapterCall("StopDiscovery"); }
         } else if (verb == "power") {
             setProperty(ADAPTER, "org.bluez.Adapter1", "Powered", arg == "1");
@@ -298,6 +300,44 @@ QQuickItem *createFrom(QQmlEngine *eng, QQmlContext *ctx, const char *url, QQuic
     return item;
 }
 
+QQuickItem *findByClass(QQuickItem *root, const char *prefix, int depth = 0) {
+    if (!root || depth > 200) return nullptr;
+    if (qstrncmp(root->metaObject()->className(), prefix, qstrlen(prefix)) == 0) return root;
+    const auto kids = root->childItems();
+    for (QQuickItem *k : kids)
+        if (QQuickItem *f = findByClass(k, prefix, depth + 1)) return f;
+    return nullptr;
+}
+
+// Quick settings: put a Bluetooth toggle right after the Airplane toggle.
+void tryInjectQuickSettings(QQuickWindow *qw) {
+    QQuickItem *airplane = findByClass(qw->contentItem(), "AirplaneToggle");
+    if (!airplane || !airplane->parentItem()) return;
+    // The toggle sits inside a WidgetLoader; insert next to that loader, in the real grid/row.
+    QQuickItem *anchor = airplane, *grid = airplane->parentItem();
+    while (grid && grid->parentItem() && qstrncmp(grid->metaObject()->className(), "WidgetLoader", 12) == 0) {
+        anchor = grid;
+        grid = grid->parentItem();
+    }
+    if (!grid || grid->property("_rmppbt").toBool()) return;
+    grid->setProperty("_rmppbt", true);
+    QString chain;
+    for (QQuickItem *p = airplane; p && chain.count('<') < 5; p = p->parentItem())
+        chain += QString::fromLatin1(p->metaObject()->className()) + "(" + QString::number(p->childItems().size()) + ") < ";
+    qWarning("[rmpp-bt] airplane chain: %s", qPrintable(chain));
+    QQmlEngine *eng = qmlEngine(airplane);
+    QQmlContext *base = qmlContext(airplane);
+    if (!eng || !base) return;
+    auto *ctx = new QQmlContext(base, grid);
+    ctx->setContextProperty("bt", g_bt->map);
+    QQuickItem *t = createFrom(eng, ctx, "qrc:/rmppbt/qml/BtQuickToggle.qml", grid);
+    if (t) {
+        t->setProperty("windowNavigator", airplane->property("windowNavigator"));
+        t->stackAfter(anchor);
+    }
+    qWarning("[rmpp-bt] quick settings toggle: %s (grid %s)", t ? "ok" : "FAILED", grid->metaObject()->className());
+}
+
 void tryInject() {
     const auto windows = QGuiApplication::allWindows();
     static int ticks = 0;
@@ -311,6 +351,7 @@ void tryInject() {
     for (QWindow *w : windows) {
         auto *qw = qobject_cast<QQuickWindow *>(w);
         if (!qw) continue;
+        tryInjectQuickSettings(qw);
         QQuickItem *col = findByName(qw->contentItem(), "settingsColumn");
         if (!col) col = findByName(qw, "settingsColumn");
         if (!col || col->property("_rmppbt").toBool()) continue;
