@@ -1,0 +1,12 @@
+#!/bin/sh
+# rmpp-bt boot hook (/usr/lib/rmpp/boot.d/50-rmpp-bt): rmpp-preload's launcher runs it once per boot, and the
+# package scripts after installing. The units go to /run/systemd/system (RAM), so the only systemd file rmpp
+# keeps on the root file system is xochitl's drop-in.
+U=/usr/lib/rmpp/units/rmpp-bt
+mkdir -p /run/systemd/system
+for u in rmpp-bluetooth.service rmpp-bt-reconnect.service; do
+	cp "$U/$u" "/run/systemd/system/$u.new" && mv -f "/run/systemd/system/$u.new" "/run/systemd/system/$u"
+done
+systemctl daemon-reload
+# loads the Bluetooth driver, then starts bluetooth.service and the reconnect logger
+systemctl --no-block start rmpp-bluetooth.service

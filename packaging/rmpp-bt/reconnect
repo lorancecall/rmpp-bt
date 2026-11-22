@@ -1,0 +1,35 @@
+#!/bin/sh
+# Logs Bluetooth adapter power and device connects/disconnects: journalctl -u rmpp-bt-reconnect
+# It no longer pages devices itself. reMarkable's sleep hook (/usr/lib/systemd/system-sleep/sleep-wifi.sh)
+# unloads the Bluetooth driver before sleep and loads it on wake, so a keyboard has to reconnect after each wake.
+# Keyboards like the Logitech K380 reconnect on a key press, and host-side connect attempts made that fail: while
+# the tablet pages the keyboard it cannot answer the keyboard's own connection (br-connection-busy, keyboard LED
+# keeps blinking). bluetoothd's own reconnect policy still applies.
+
+# dbus-monitor prints each signal over several lines; awk turns the ones we need into "path key value".
+# The BEGIN line logs the adapter that is already up. Devices appearing in a scan
+# (InterfacesAdded of Device1) are not logged.
+dbus-monitor --system \
+	"type='signal',sender='org.bluez',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'" \
+	"type='signal',sender='org.bluez',interface='org.freedesktop.DBus.ObjectManager',member='InterfacesAdded'" |
+awk '
+BEGIN { print "/org/bluez/hci0 Powered true"; fflush() }
+/^signal / { path = ""; iface = ""; key = ""; added = ($0 ~ /member=InterfacesAdded/); if (match($0, /path=[^;]*/)) path = substr($0, RSTART + 5, RLENGTH - 5); next }
+/^ *object path "/ { p = $0; sub(/^ *object path "/, "", p); sub(/".*/, "", p); path = p; next }
+/^ *string "org\.bluez\./ { s = $0; sub(/^ *string "/, "", s); sub(/".*/, "", s); iface = s; next }
+/^ *string "/ { s = $0; sub(/^ *string "/, "", s); sub(/".*/, "", s); key = s; next }
+/variant +boolean/ {
+	if ((iface == "org.bluez.Adapter1" && key == "Powered") ||
+	    (!added && iface == "org.bluez.Device1" && (key == "Connected" || key == "Paired" || key == "Bonded"))) {
+		print path, key, $NF; fflush()
+	}
+}' |
+while read -r path key value; do
+	dev=$(echo "${path##*/dev_}" | tr _ :)
+	case "$key" in
+	Powered)
+		echo "adapter ${path##*/} powered: $value"
+		;;
+	*) echo "$dev $key: $value" ;;
+	esac
+done
