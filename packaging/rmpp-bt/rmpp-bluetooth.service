@@ -1,0 +1,12 @@
+[Unit]
+Description=Load the NXP Bluetooth driver and start BlueZ (rmpp-bt)
+DefaultDependencies=no
+After=systemd-modules-load.service
+Before=bluetooth.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# reMarkable blacklists btnxpuart; an explicit modprobe still loads it.
+ExecStart=/sbin/modprobe btnxpuart
+ExecStartPost=/bin/sh -c "for i in 1 2 3 4 5 6 7 8 9 10; do [ -d /sys/class/bluetooth/hci0 ] && break; sleep 1; done; systemctl --no-block start bluetooth.service rmpp-bt-reconnect.service"

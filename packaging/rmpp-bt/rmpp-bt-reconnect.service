@@ -1,0 +1,10 @@
+[Unit]
+Description=Log Bluetooth adapter power and device connects (rmpp-bt)
+After=bluetooth.service
+Wants=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/rmpp/rmpp-bt/reconnect
+Restart=always
+RestartSec=10
