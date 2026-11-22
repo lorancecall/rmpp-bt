@@ -18,10 +18,10 @@ Tested on reMarkable Paper Pro, OS 3.29.1.
 Start at **[rmpp-packages](https://github.com/lorancecall/rmpp-packages#install)**: it explains developer mode and
 has **rmpp setup**, the installer for all rmpp add-ons.
 
-- In rmpp setup, tick **Bluetooth settings and toggle** (rmpp-bt; selected by default).
+- In rmpp setup (the desktop app or the script), tick **Bluetooth settings and toggle** (rmpp-bt; selected by default).
+- It installs `rmpp-preload` with it ([all packages and dependencies](https://github.com/lorancecall/rmpp-packages/blob/main/docs/packages.md)).
 - After a reMarkable OS update: **Restore** in rmpp setup.
-- Other ways (Vellum on the command line, building and installing it yourself) and removal:
-  [docs/install.md](docs/install.md).
+- Without rmpp setup, removing it, next to other mods, building it: [docs/install.md](docs/install.md).
 
 ## Use
 
