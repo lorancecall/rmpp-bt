@@ -1,6 +1,6 @@
 maintainer="lorancecall <84116812+lorancecall@users.noreply.github.com>"
 pkgname=rmpp-bt
-pkgver=0.1.1
+pkgver=0.1.2
 pkgrel=0
 upstream_author="lorancecall"
 category="ui"
@@ -12,7 +12,7 @@ depends="rmpp-preload>=0.2.0 !rm1 !rm2 mount-utils remarkable-os>=3.29 remarkabl
 source="
 https://github.com/$upstream_author/rmpp-bt/releases/download/v$pkgver/librmpp-bt.so
 https://github.com/$upstream_author/rmpp-bt/releases/download/v$pkgver/rmpp-bt.rcc
-https://raw.githubusercontent.com/$upstream_author/rmpp-bt/v0.1.0/LICENSE
+https://raw.githubusercontent.com/$upstream_author/rmpp-bt/v$pkgver/LICENSE
 rmpp-bluetooth.service
 rmpp-bt-reconnect.service
 reconnect
