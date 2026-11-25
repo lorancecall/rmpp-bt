@@ -7,7 +7,7 @@
 Bluetooth for the reMarkable Paper Pro: a **Settings > Bluetooth** page and a quick-settings toggle to pair and
 connect keyboards. Runs without xovi and keeps working after a reboot.
 
-Made for and tested on the reMarkable Paper Pro with OS 3.29.1. Other reMarkable models are not supported.
+Made for and tested on the reMarkable Paper Pro with OS 3.29. Other reMarkable models are not supported.
 Updates for newer OS versions may take some time to follow.
 
 > Part of the **rmpp add-ons**, built on [rmpp-packages](https://github.com/lorancecall/rmpp-packages): it is
@@ -22,15 +22,16 @@ has **rmpp setup**, the installer for all rmpp add-ons.
 - In rmpp setup (the desktop app or the script), tick **Bluetooth settings and toggle** (rmpp-bt; selected by default).
 - It installs `rmpp-preload` with it ([all packages and dependencies](https://github.com/lorancecall/rmpp-packages/blob/main/docs/packages.md)).
 - After a reMarkable OS update: **Restore** in rmpp setup.
-- Without rmpp setup, removing it, next to other mods, building it: [docs/install.md](docs/install.md).
+- Installing without rmpp setup, uninstalling, using it next to other mods, and building: [docs/install.md](docs/install.md).
 
 ## Use
 
 - **Settings > Bluetooth:** turn Bluetooth on or off, search, pair, connect and forget devices.
 - **Quick settings:** a Bluetooth toggle.
-- **Keyboards:** a paired Bluetooth keyboard types in xochitl. Per keyboard, **Type Folio mode** makes xochitl treat it
-  as the Type Folio; typing other languages needs
-  [rmpp-lang](https://github.com/lorancecall/rmpp-lang).
+- **Keyboards:** a paired Bluetooth keyboard types in xochitl. While one is connected, the on-screen keys fold away
+  and the format bar at the bottom stays. Turn on **Type Folio mode** for a keyboard (on its row in Settings >
+  Bluetooth) and xochitl treats it as a Type Folio instead: the Type Folio's typing layout and paragraph format
+  button. Both come from [rmpp-lang](https://github.com/lorancecall/rmpp-lang), which also types other languages.
 - Bluetooth stays on across reboots when you leave it on.
 
 ## How it works
